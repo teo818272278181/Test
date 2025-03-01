@@ -1,4 +1,4 @@
-name: macOS RDP
+name: macOS VNC
 
 on:
   workflow_dispatch:  # Chạy khi bấm 'Run workflow' trên GitHub
@@ -7,21 +7,22 @@ jobs:
   run-macos:
     runs-on: macos-latest
     steps:
-      - name: Cài đặt Homebrew
+      - name: Cài đặt Homebrew và các công cụ cần thiết
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-      - name: Cài đặt xRDP và các công cụ cần thiết
-        run: |
           brew install xquartz
-          brew install xrdp
-          sudo brew services start xrdp
-
-      - name: Cài đặt ngrok và thiết lập token
-        run: |
           brew install ngrok
-          ngrok config add-authtoken 2tiuPdtf1PusiqcGrAr7wAmsFjM_6es9r6cba8qwU7cCER96B
-          ngrok tcp 3389 > /dev/null &
 
-      - name: Hiển thị địa chỉ RDP
+      - name: Bật VNC Server trên macOS
+        run: |
+          sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.screensharing.plist
+          sudo defaults write /Library/Preferences/com.apple.RemoteManagement VNCAlwaysStartOnConsole -bool true
+          echo "VNC Server đã bật!"
+
+      - name: Mở VNC qua Ngrok
+        run: |
+          ngrok config add-authtoken 2tiuPdtf1PusiqcGrAr7wAmsFjM_6es9r6cba8qwU7cCER96B
+          ngrok tcp 5900 > /dev/null &
+
+      - name: Hiển thị địa chỉ VNC
         run: sleep 5 && curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url'
